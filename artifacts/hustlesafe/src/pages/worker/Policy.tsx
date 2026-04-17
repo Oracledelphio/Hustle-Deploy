@@ -17,7 +17,7 @@ export function WorkerPolicy() {
       
       if (worker?.id && tier && amount) {
         setIsUpdating(true);
-        fetch("http://localhost:5000/api/stripe/checkout-success", {
+        fetch("/api/stripe/checkout-success", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ workerId: worker.id, tier, amount: parseFloat(amount) }),
@@ -47,7 +47,7 @@ export function WorkerPolicy() {
     setIsUpdating(true);
     try {
       // Using absolute URL to point to backend server since frontend is on 5173
-      const response = await fetch("http://localhost:5000/api/stripe/create-checkout-session", {
+      const response = await fetch("/api/stripe/create-checkout-session", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
