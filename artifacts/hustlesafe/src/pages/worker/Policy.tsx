@@ -13,15 +13,35 @@ export function WorkerPolicy() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("success")) {
       const tier = params.get("tier");
-      toast.success(`Successfully upgraded to ${tier} tier!`);
-      // Clean up the URL
-      window.history.replaceState({}, document.title, window.location.pathname);
+      const amount = params.get("price"); // We need to pass price in URL
+      
+      if (worker?.id && tier && amount) {
+        setIsUpdating(true);
+        fetch("http://localhost:5000/api/stripe/checkout-success", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ workerId: worker.id, tier, amount: parseFloat(amount) }),
+        })
+        .then(res => {
+          if (!res.ok) throw new Error("Failed to process payment");
+          toast.success(`Successfully upgraded to ${tier} tier and wallet credited!`);
+        })
+        .catch(err => toast.error(err.message))
+        .finally(() => {
+          setIsUpdating(false);
+          window.history.replaceState({}, document.title, window.location.pathname);
+          // Reload to reflect new tier via useAuth
+          window.location.reload();
+        });
+      } else {
+        toast.success(`Successfully upgraded to ${tier} tier!`);
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
     } else if (params.get("canceled")) {
       toast.error("Checkout was canceled.");
-      // Clean up the URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, []);
+  }, [worker]);
 
   const handleUpgradeProcess = async (tierName: string, price: number) => {
     setIsUpdating(true);
@@ -60,6 +80,9 @@ export function WorkerPolicy() {
     { name: "Pro", price: 40, cap: 1500 },
   ];
 
+  const activeTierName = worker?.policy_tier || "basic";
+  const currentTierData = tiers.find(t => t.name.toLowerCase() === activeTierName.toLowerCase()) || tiers[0];
+
   return (
     <AppLayout>
       <div className="space-y-8 pb-12 max-w-5xl">
@@ -78,15 +101,15 @@ export function WorkerPolicy() {
             <div className="grid md:grid-cols-3 gap-8">
               <div>
                 <div className="text-white/60 text-sm font-bold uppercase tracking-wider mb-1">Current Tier</div>
-                <div className="text-4xl font-display font-bold">Standard</div>
+                <div className="text-4xl font-display font-bold">{currentTierData.name}</div>
               </div>
               <div>
                 <div className="text-white/60 text-sm font-bold uppercase tracking-wider mb-1">Weekly Premium</div>
-                <div className="text-4xl font-display font-bold text-primary-foreground">₹25</div>
+                <div className="text-4xl font-display font-bold text-primary-foreground">₹{currentTierData.price}</div>
               </div>
               <div>
                 <div className="text-white/60 text-sm font-bold uppercase tracking-wider mb-1">Daily Cap</div>
-                <div className="text-4xl font-display font-bold">₹800</div>
+                <div className="text-4xl font-display font-bold">₹{currentTierData.cap}</div>
               </div>
             </div>
           </div>
