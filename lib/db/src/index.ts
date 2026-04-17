@@ -7,15 +7,23 @@ const { Pool } = pg;
 export let pool: pg.Pool;
 export let db: any;
 
+// Forcefully ignore unauthorized SSL certs for Supabase/Render compatibility
+if (process.env.NODE_ENV === "production") {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+}
+
 if (!process.env.DATABASE_URL) {
   console.warn("⚠️ DATABASE_URL is not set. Running in Demo/Mock Mode. Database queries will fail.");
   // Provide a dummy pool to prevent immediate startup crashes
   pool = new Pool();
   db = drizzle(pool, { schema });
 } else {
+  // Use a more robust SSL configuration for Supabase
   pool = new Pool({ 
     connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false } 
+    ssl: {
+      rejectUnauthorized: false
+    }
   });
   db = drizzle(pool, { schema });
 }
