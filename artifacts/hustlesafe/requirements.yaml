@@ -1,0 +1,22 @@
+packages:
+  "framer-motion": "For smooth layout transitions, page routing animations, and the GDS gauge animation"
+  "recharts": "For analytics charts (loss ratio, premium trends, tier distribution)"
+  "zustand": "For auth state management and local UI state"
+  "date-fns": "For formatting timestamps and dates in claim histories"
+  "lucide-react": "For crisp, consistent iconography throughout the application"
+
+images:
+  - path: "artifacts/hustlesafe/public/images/hero-bg.png"
+    description: "A luxury minimal abstract background featuring soft, elegant gradient meshes in deep indigo (#4F46E5) and warm white, with subtle glassmorphism textures and very light geometric lines. Professional, clean, fintech aesthetic."
+    aspect_ratio: "16:9"
+  - path: "artifacts/hustlesafe/public/images/logo.png"
+    description: "Minimalist logo mark for 'HustleSafe' featuring a clean, elegant shield icon in electric indigo (#4F46E5) on a transparent background."
+    aspect_ratio: "1:1"
+  - path: "artifacts/hustlesafe/public/images/empty-claims.png"
+    description: "A clean, minimal, luxury illustration showing a protective umbrella or shield over a grid, rendered in subtle indigo and gray tones on a warm white background. Used for empty states."
+    aspect_ratio: "4:3"
+
+notes:
+  - Using polling (refetchInterval) on React Query hooks to simulate the real-time Supabase functionality requested, since the backend is a standard Express REST API.
+  - Relying on @workspace/api-client-react for all API interactions.
+  - Using demo credentials for auth bypass as requested.

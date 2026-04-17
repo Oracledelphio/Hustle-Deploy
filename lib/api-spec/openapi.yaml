@@ -1,0 +1,1208 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: HustleSafe API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: workers
+    description: Worker operations
+  - name: zones
+    description: Zone operations
+  - name: policies
+    description: Policy operations
+  - name: claims
+    description: Claims operations
+  - name: disruptions
+    description: Disruption event operations
+  - name: simulator
+    description: Disruption simulator
+  - name: analytics
+    description: Analytics and reporting
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /workers:
+    get:
+      operationId: listWorkers
+      tags: [workers]
+      summary: List all workers
+      parameters:
+        - name: zone_id
+          in: query
+          schema:
+            type: string
+        - name: tier
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: List of workers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkerListResponse"
+    post:
+      operationId: createWorker
+      tags: [workers]
+      summary: Create a new worker
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWorkerRequest"
+      responses:
+        "201":
+          description: Worker created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Worker"
+
+  /workers/{id}:
+    get:
+      operationId: getWorker
+      tags: [workers]
+      summary: Get a worker by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Worker details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Worker"
+        "404":
+          description: Worker not found
+
+  /workers/phone/{phone}:
+    get:
+      operationId: getWorkerByPhone
+      tags: [workers]
+      summary: Get a worker by phone number
+      parameters:
+        - name: phone
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Worker details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Worker"
+        "404":
+          description: Worker not found
+
+  /zones:
+    get:
+      operationId: listZones
+      tags: [zones]
+      summary: List all zones
+      responses:
+        "200":
+          description: List of zones
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ZoneListResponse"
+
+  /zones/{id}:
+    get:
+      operationId: getZone
+      tags: [zones]
+      summary: Get a zone by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Zone details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Zone"
+    patch:
+      operationId: updateZone
+      tags: [zones]
+      summary: Update zone data
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateZoneRequest"
+      responses:
+        "200":
+          description: Updated zone
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Zone"
+
+  /policies:
+    get:
+      operationId: listPolicies
+      tags: [policies]
+      summary: List policies
+      parameters:
+        - name: worker_id
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of policies
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PolicyListResponse"
+    post:
+      operationId: createPolicy
+      tags: [policies]
+      summary: Create a new policy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePolicyRequest"
+      responses:
+        "201":
+          description: Policy created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Policy"
+
+  /policies/{id}:
+    get:
+      operationId: getPolicy
+      tags: [policies]
+      summary: Get a policy by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Policy details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Policy"
+
+  /claims:
+    get:
+      operationId: listClaims
+      tags: [claims]
+      summary: List all claims
+      parameters:
+        - name: worker_id
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: zone_id
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: List of claims
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClaimListResponse"
+
+  /claims/{id}:
+    get:
+      operationId: getClaim
+      tags: [claims]
+      summary: Get a claim by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Claim details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Claim"
+    patch:
+      operationId: updateClaim
+      tags: [claims]
+      summary: Update claim status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateClaimRequest"
+      responses:
+        "200":
+          description: Updated claim
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Claim"
+
+  /disruptions:
+    get:
+      operationId: listDisruptions
+      tags: [disruptions]
+      summary: List disruption events
+      parameters:
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+        - name: zone_id
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of disruption events
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DisruptionListResponse"
+
+  /simulator/trigger:
+    post:
+      operationId: triggerDisruption
+      tags: [simulator]
+      summary: Trigger a disruption event in a zone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TriggerDisruptionRequest"
+      responses:
+        "200":
+          description: Disruption triggered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TriggerDisruptionResponse"
+
+  /simulator/resolve/{zoneId}:
+    post:
+      operationId: resolveDisruption
+      tags: [simulator]
+      summary: Resolve/end a disruption in a zone
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Disruption resolved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResolveDisruptionResponse"
+
+  /analytics/overview:
+    get:
+      operationId: getAnalyticsOverview
+      tags: [analytics]
+      summary: Get platform analytics overview
+      responses:
+        "200":
+          description: Analytics overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsOverview"
+
+  /analytics/loss-ratio:
+    get:
+      operationId: getLossRatio
+      tags: [analytics]
+      summary: Get loss ratio data by week
+      responses:
+        "200":
+          description: Loss ratio data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LossRatioResponse"
+
+  /premium/history/{workerId}:
+    get:
+      operationId: getPremiumHistory
+      tags: [workers]
+      summary: Get premium history for a worker
+      parameters:
+        - name: workerId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Premium history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PremiumHistoryResponse"
+
+  /fraud/evaluate:
+    post:
+      operationId: evaluateFraudClaim
+      tags: [fraud]
+      summary: Evaluate fraud for a worker claim context using full adaptive pipeline
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FraudEvaluationRequest"
+      responses:
+        "200":
+          description: Final Adaptive Fraud Evaluation Result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FraudEvaluationResult"
+                
+  /fraud/audit/{claim_id}:
+    get:
+      operationId: getFraudAuditLog
+      tags: [fraud]
+      summary: Fetch the full audit log and XGBoost breakdown for a claim
+      parameters:
+        - name: claim_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Audit log response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FraudAuditLog"
+
+  /fraud/signals/{worker_id}:
+    get:
+      operationId: getWorkerSignalHistory
+      tags: [fraud]
+      summary: Fetch recent signals and fraud evaluations mapped to a worker ID
+      parameters:
+        - name: worker_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: List of signal tracking history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FraudAuditLog"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    Worker:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+          nullable: true
+        platform:
+          type: string
+          enum: [zomato, swiggy, both]
+        zone_id:
+          type: string
+        upi_id:
+          type: string
+          nullable: true
+        platform_rating:
+          type: number
+        policy_tier:
+          type: string
+          enum: [basic, standard, pro]
+        is_active:
+          type: boolean
+        fraud_score:
+          type: number
+        account_age_days:
+          type: integer
+        created_at:
+          type: string
+      required:
+        - id
+        - name
+        - phone
+        - platform
+        - zone_id
+        - platform_rating
+        - policy_tier
+        - is_active
+        - fraud_score
+        - account_age_days
+        - created_at
+
+    WorkerListResponse:
+      type: object
+      properties:
+        workers:
+          type: array
+          items:
+            $ref: "#/components/schemas/Worker"
+        total:
+          type: integer
+      required:
+        - workers
+        - total
+
+    CreateWorkerRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        platform:
+          type: string
+          enum: [zomato, swiggy, both]
+        zone_id:
+          type: string
+        upi_id:
+          type: string
+        policy_tier:
+          type: string
+          enum: [basic, standard, pro]
+      required:
+        - name
+        - phone
+        - platform
+        - zone_id
+        - policy_tier
+
+    Zone:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        city:
+          type: string
+        lat:
+          type: number
+          nullable: true
+        lng:
+          type: number
+          nullable: true
+        gds_score:
+          type: integer
+        status:
+          type: string
+          enum: [normal, elevated, high, shutdown]
+        active_workers:
+          type: integer
+        rainfall_mm:
+          type: number
+        traffic_score:
+          type: number
+        aqi:
+          type: integer
+        demand_drop_pct:
+          type: integer
+        govt_alert:
+          type: boolean
+        last_updated:
+          type: string
+      required:
+        - id
+        - name
+        - city
+        - gds_score
+        - status
+        - active_workers
+        - rainfall_mm
+        - traffic_score
+        - aqi
+        - demand_drop_pct
+        - govt_alert
+        - last_updated
+
+    ZoneListResponse:
+      type: object
+      properties:
+        zones:
+          type: array
+          items:
+            $ref: "#/components/schemas/Zone"
+      required:
+        - zones
+
+    UpdateZoneRequest:
+      type: object
+      properties:
+        gds_score:
+          type: integer
+        status:
+          type: string
+          enum: [normal, elevated, high, shutdown]
+        rainfall_mm:
+          type: number
+        traffic_score:
+          type: number
+        aqi:
+          type: integer
+        demand_drop_pct:
+          type: integer
+        govt_alert:
+          type: boolean
+        active_workers:
+          type: integer
+
+    Policy:
+      type: object
+      properties:
+        id:
+          type: string
+        worker_id:
+          type: string
+        tier:
+          type: string
+          enum: [basic, standard, pro]
+        weekly_premium:
+          type: number
+        coverage_cap:
+          type: number
+        status:
+          type: string
+          enum: [active, inactive, suspended]
+        activated_at:
+          type: string
+        expires_at:
+          type: string
+          nullable: true
+        zone_id:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+      required:
+        - id
+        - worker_id
+        - tier
+        - weekly_premium
+        - coverage_cap
+        - status
+        - activated_at
+        - created_at
+
+    PolicyListResponse:
+      type: object
+      properties:
+        policies:
+          type: array
+          items:
+            $ref: "#/components/schemas/Policy"
+        total:
+          type: integer
+      required:
+        - policies
+        - total
+
+    CreatePolicyRequest:
+      type: object
+      properties:
+        worker_id:
+          type: string
+        tier:
+          type: string
+          enum: [basic, standard, pro]
+        zone_id:
+          type: string
+      required:
+        - worker_id
+        - tier
+
+    Claim:
+      type: object
+      properties:
+        id:
+          type: string
+        worker_id:
+          type: string
+        policy_id:
+          type: string
+          nullable: true
+        zone_id:
+          type: string
+          nullable: true
+        disruption_type:
+          type: string
+          nullable: true
+        disruption_start:
+          type: string
+          nullable: true
+        disruption_end:
+          type: string
+          nullable: true
+        hours_affected:
+          type: number
+          nullable: true
+        hourly_rate:
+          type: number
+        payout_amount:
+          type: number
+          nullable: true
+        fraud_score:
+          type: number
+        status:
+          type: string
+          enum: [pending, auto_approved, soft_hold, insurer_review, auto_rejected, paid]
+        fraud_signals:
+          type: object
+          additionalProperties: true
+        resolution_notes:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+        paid_at:
+          type: string
+          nullable: true
+        worker_name:
+          type: string
+          nullable: true
+        zone_name:
+          type: string
+          nullable: true
+      required:
+        - id
+        - worker_id
+        - hourly_rate
+        - fraud_score
+        - status
+        - fraud_signals
+        - created_at
+
+    ClaimListResponse:
+      type: object
+      properties:
+        claims:
+          type: array
+          items:
+            $ref: "#/components/schemas/Claim"
+        total:
+          type: integer
+      required:
+        - claims
+        - total
+
+    UpdateClaimRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, auto_approved, soft_hold, insurer_review, auto_rejected, paid]
+        resolution_notes:
+          type: string
+
+    DisruptionEvent:
+      type: object
+      properties:
+        id:
+          type: string
+        zone_id:
+          type: string
+          nullable: true
+        event_type:
+          type: string
+          enum: [heavy_rain, flood, curfew, platform_outage, strike, aqi_hazard]
+        gds_target:
+          type: integer
+          nullable: true
+        duration_minutes:
+          type: integer
+          nullable: true
+        triggered_by:
+          type: string
+        is_active:
+          type: boolean
+        started_at:
+          type: string
+          nullable: true
+        ended_at:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+      required:
+        - id
+        - event_type
+        - triggered_by
+        - is_active
+        - created_at
+
+    DisruptionListResponse:
+      type: object
+      properties:
+        disruptions:
+          type: array
+          items:
+            $ref: "#/components/schemas/DisruptionEvent"
+      required:
+        - disruptions
+
+    TriggerDisruptionRequest:
+      type: object
+      properties:
+        zone_id:
+          type: string
+        event_type:
+          type: string
+          enum: [heavy_rain, flood, curfew, platform_outage, strike, aqi_hazard]
+        gds_target:
+          type: integer
+        duration_minutes:
+          type: integer
+      required:
+        - zone_id
+        - event_type
+        - gds_target
+
+    TriggerDisruptionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        disruption:
+          $ref: "#/components/schemas/DisruptionEvent"
+        zone:
+          $ref: "#/components/schemas/Zone"
+        claims_created:
+          type: integer
+        message:
+          type: string
+      required:
+        - success
+        - disruption
+        - zone
+        - claims_created
+        - message
+
+    ResolveDisruptionResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        zone:
+          $ref: "#/components/schemas/Zone"
+        message:
+          type: string
+      required:
+        - success
+        - zone
+        - message
+
+    AnalyticsOverview:
+      type: object
+      properties:
+        total_workers:
+          type: integer
+        active_policies:
+          type: integer
+        total_claims:
+          type: integer
+        total_paid_out:
+          type: number
+        avg_payout_minutes:
+          type: number
+        loss_ratio:
+          type: number
+        zones_in_disruption:
+          type: integer
+        claims_by_status:
+          type: object
+          additionalProperties:
+            type: integer
+        top_disruption_zones:
+          type: array
+          items:
+            type: object
+            properties:
+              zone_id:
+                type: string
+              zone_name:
+                type: string
+              claim_count:
+                type: integer
+            required:
+              - zone_id
+              - zone_name
+              - claim_count
+      required:
+        - total_workers
+        - active_policies
+        - total_claims
+        - total_paid_out
+        - avg_payout_minutes
+        - loss_ratio
+        - zones_in_disruption
+        - claims_by_status
+        - top_disruption_zones
+
+    LossRatioResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              week:
+                type: string
+              premiums_collected:
+                type: number
+              claims_paid:
+                type: number
+              loss_ratio:
+                type: number
+            required:
+              - week
+              - premiums_collected
+              - claims_paid
+              - loss_ratio
+      required:
+        - data
+
+    PremiumHistory:
+      type: object
+      properties:
+        id:
+          type: string
+        worker_id:
+          type: string
+        week_start:
+          type: string
+          nullable: true
+        premium_amount:
+          type: number
+          nullable: true
+        zone_risk_adjustment:
+          type: number
+          nullable: true
+        worker_risk_adjustment:
+          type: number
+          nullable: true
+        explanation:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+      required:
+        - id
+        - worker_id
+        - created_at
+
+    PremiumHistoryResponse:
+      type: object
+      properties:
+        history:
+          type: array
+          items:
+            $ref: "#/components/schemas/PremiumHistory"
+        current_premium:
+          type: number
+        base_premium:
+          type: number
+        zone_adjustment:
+          type: number
+        worker_adjustment:
+          type: number
+        explanation:
+          type: string
+      required:
+        - history
+        - current_premium
+        - base_premium
+        - zone_adjustment
+        - worker_adjustment
+        - explanation
+
+    FraudEvaluationRequest:
+      type: object
+      required:
+        - worker_id
+        - zone_id
+        - user_lat
+        - user_lng
+        - device_id
+      properties:
+        worker_id:
+          type: string
+          format: uuid
+          description: Unique identifier of the worker.
+        zone_id:
+          type: string
+          description: Identifier of the zone the worker claims to be disrupted in.
+        user_lat:
+          type: number
+          format: float
+          description: Worker's current latitude.
+        user_lng:
+          type: number
+          format: float
+          description: Worker's current longitude.
+        device_id:
+          type: string
+          description: Fingerprint ID of the user's mobile device for fraud checks.
+          
+    FraudPass1Response:
+      type: object
+      required:
+        - composite_score
+        - risk_status
+        - details
+      properties:
+        composite_score:
+          type: number
+          format: float
+          description: Weighted global score between 0.0 (safe) and 1.0 (fraud).
+        risk_status:
+          type: string
+          enum: [clear, amber, high_risk]
+          description: Calculated status mapping to threshold tiers.
+        details:
+          type: object
+          properties:
+            gps_match:
+              type: number
+              format: float
+            weather_correlation:
+              type: number
+              format: float
+            peer_activity:
+              type: number
+              format: float
+            historical_pattern:
+              type: number
+              format: float
+            device_fingerprint:
+              type: number
+              format: float
+
+    FraudEvaluationResult:
+      type: object
+      required:
+        - final_score
+        - resolution_tier
+        - individual_signal_scores
+        - signal_status
+        - critical_flags_fired
+        - critical_flag_signals
+        - worker_trust_score
+        - adaptive_threshold_used
+        - primary_elevated_signal
+        - pass2_triggered
+        - pass2_trigger_reason
+        - adversarial_elevated_count
+        - data_quality
+      properties:
+        final_score:
+          type: number
+          format: float
+        resolution_tier:
+          type: string
+        individual_signal_scores:
+          type: object
+          additionalProperties:
+            type: number
+            nullable: true
+        signal_status:
+          type: object
+          additionalProperties:
+            type: string
+            enum: [computed, missing_data, error]
+        critical_flags_fired:
+          type: boolean
+        critical_flag_signals:
+          type: array
+          items:
+            type: string
+        worker_trust_score:
+          type: number
+          format: float
+        adaptive_threshold_used:
+          type: number
+          format: float
+        primary_elevated_signal:
+          type: string
+        pass2_triggered:
+          type: boolean
+        pass2_trigger_reason:
+          type: string
+          enum: [pass1_clear, pass1_amber, pass1_high_risk]
+        adversarial_elevated_count:
+          type: integer
+          format: int32
+        data_quality:
+          type: object
+          required:
+            - available_signals
+            - total_signals
+            - availability_ratio
+          properties:
+            available_signals:
+              type: integer
+              format: int32
+            total_signals:
+              type: integer
+              format: int32
+            availability_ratio:
+              type: number
+              format: float
+          
+    FraudAuditLog:
+      type: object
+      required:
+        - id
+        - claim_id
+        - worker_id
+        - timestamp
+        - signals
+        - pass1_composite
+        - xgboost_score
+        - resolution_tier
+        - critical_flags
+        - model_version
+        - adaptive_threshold_applied
+      properties:
+        id:
+          type: string
+          format: uuid
+        claim_id:
+          type: string
+          format: uuid
+        worker_id:
+          type: string
+          format: uuid
+        timestamp:
+          type: string
+          format: date-time
+        signals:
+          type: object
+        pass1_composite:
+          type: string
+        pass2_composite:
+          type: string
+        xgboost_score:
+          type: string
+        resolution_tier:
+          type: string
+        critical_flags:
+          type: object
+        model_version:
+          type: string
+        adaptive_threshold_applied:
+          type: string
