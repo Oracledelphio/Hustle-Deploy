@@ -90,7 +90,8 @@ export function WorkerDashboard() {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 3000);
 
-        const statsRes = await fetch(`/api/workers/${worker?.id}/statistics`, { signal: controller.signal }).catch(() => null);
+        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+        const statsRes = await fetch(`${apiUrl}/api/workers/${worker?.id}/statistics`, { signal: controller.signal }).catch(() => null);
         clearTimeout(timeoutId);
 
         if (statsRes && statsRes.ok) {
@@ -138,7 +139,8 @@ export function WorkerDashboard() {
           // we simulate the payload based on the UI toggle clearly labeled as 'Simulation'.
           const accelerometerVariance = isStationarySim ? 0.02 : 1.45;
 
-          await fetch(`/api/workers/${worker.id}/ping`, {
+          const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+          await fetch(`${apiUrl}/api/workers/${worker.id}/ping`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -155,7 +157,8 @@ export function WorkerDashboard() {
         }, (err) => {
           console.warn("Location permission denied or error. Sending heart-beat only.", err);
           // Send heartbeat without GPS if denied - backend handles nulls as safe 0.0
-          fetch(`/api/workers/${worker.id}/ping`, {
+          const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+          fetch(`${apiUrl}/api/workers/${worker.id}/ping`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

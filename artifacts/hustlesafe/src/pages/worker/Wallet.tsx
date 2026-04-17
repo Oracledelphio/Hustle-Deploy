@@ -101,7 +101,8 @@ function WithdrawModal({
 
     setLoading(true);
     try {
-      const res = await fetch(`/api/wallet/${workerId}/withdraw`, {
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+      const res = await fetch(`${apiUrl}/api/wallet/${workerId}/withdraw`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ amount: num }),
