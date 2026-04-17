@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import "leaflet/dist/leaflet.css";
 import { MapContainer, TileLayer, Circle, Popup, Tooltip, useMap } from "react-leaflet";
 import { Clock } from "lucide-react";
+import { calculateDailyRisk, generateHourlyRiskVariance } from "@/lib/riskSimulation";
 
 const ZONE_COORDS: Record<string, [number, number]> = {
   koramangala: [12.9352, 77.6245],
@@ -15,18 +16,6 @@ const ZONE_COORDS: Record<string, [number, number]> = {
   marathahalli: [12.9591, 77.6971],
   jayanagar: [12.9252, 77.5938],
 };
-
-// ── Identical fallback to Dashboard ──────────────────────────────────────────
-const fallbackHourlyForecast = [
-  { time: '08:00', Koramangala: 32, Indiranagar: 28, Whitefield: 20, Electronic_City: 15, HSR_Layout: 25, BTM_Layout: 30, Marathahalli: 22, Jayanagar: 18 },
-  { time: '10:00', Koramangala: 35, Indiranagar: 30, Whitefield: 22, Electronic_City: 18, HSR_Layout: 28, BTM_Layout: 32, Marathahalli: 25, Jayanagar: 20 },
-  { time: '12:00', Koramangala: 40, Indiranagar: 35, Whitefield: 25, Electronic_City: 20, HSR_Layout: 30, BTM_Layout: 35, Marathahalli: 28, Jayanagar: 22 },
-  { time: '14:00', Koramangala: 55, Indiranagar: 45, Whitefield: 30, Electronic_City: 25, HSR_Layout: 40, BTM_Layout: 45, Marathahalli: 35, Jayanagar: 28 },
-  { time: '16:00', Koramangala: 86, Indiranagar: 78, Whitefield: 45, Electronic_City: 35, HSR_Layout: 65, BTM_Layout: 75, Marathahalli: 50, Jayanagar: 40 },
-  { time: '18:00', Koramangala: 60, Indiranagar: 55, Whitefield: 35, Electronic_City: 28, HSR_Layout: 45, BTM_Layout: 50, Marathahalli: 40, Jayanagar: 35 },
-  { time: '20:00', Koramangala: 45, Indiranagar: 40, Whitefield: 28, Electronic_City: 22, HSR_Layout: 35, BTM_Layout: 40, Marathahalli: 30, Jayanagar: 25 },
-  { time: '22:00', Koramangala: 30, Indiranagar: 28, Whitefield: 20, Electronic_City: 15, HSR_Layout: 25, BTM_Layout: 30, Marathahalli: 22, Jayanagar: 18 },
-];
 
 function gdsColor(gds: number): string {
   if (gds < 40) return "#10B981";
@@ -57,30 +46,28 @@ export function LiveMap() {
   const [selectedZone, setSelectedZone] = useState<any>(null);
 
   // ── Mirrors Dashboard: AI hourly data + time scrubber ────────────────────
-  const [aiHourlyData, setAiHourlyData] = useState<any[]>(fallbackHourlyForecast);
+  const [aiHourlyData, setAiHourlyData] = useState<any[]>([]);
   const [simulatedHour, setSimulatedHour] = useState<number | null>(null);
   const [liveZones, setLiveZones] = useState<any[]>([]);
 
-  // Step 1 – fetch AI forecast once (same fetch logic as Dashboard)
+  // Step 1 – Generate AI forecast locally (Perfect sync with Dashboard)
   useEffect(() => {
-    const fetchForecast = async () => {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000);
-        const res = await fetch('/api/zones/forecast/24-hour', { signal: controller.signal }).catch(() => null);
-        clearTimeout(timeoutId);
+    const todayStr = "2026-04-16"; // Locked to demo data window
 
-        if (res && res.ok) {
-          const apiData = await res.json();
-          if (apiData.forecast && apiData.forecast.length > 0) {
-            setAiHourlyData(apiData.forecast);
-          }
-        }
-      } catch {
-        // silently fall back to static data already set
-      }
-    };
-    fetchForecast();
+    let localHourlyModel: any[] = Array.from({ length: 24 }, (_, i) => ({ time: `${i.toString().padStart(2, '0')}:00` }));
+
+    const mappedZones = ["koramangala", "indiranagar", "whitefield", "electronic_city", "hsr_layout", "btm_layout", "marathahalli", "jayanagar"];
+
+    mappedZones.forEach(z => {
+      const dailyAvg = calculateDailyRisk(z, todayStr);
+      const hourlyArray = generateHourlyRiskVariance(dailyAvg);
+
+      hourlyArray.forEach((hScore, hr) => {
+        localHourlyModel[hr][z] = hScore;
+      });
+    });
+
+    setAiHourlyData(localHourlyModel);
   }, []);
 
   // Step 2 – Autonomous Synchronisation Engine (identical to Dashboard)
@@ -101,8 +88,8 @@ export function LiveMap() {
     }
 
     const updatedZones = zonesData.zones.map((zone: any) => {
-      // Key lookup: "zone.name.replace(' ', '_')" — identical to Dashboard
-      const safeKey = zone.name.replace(" ", "_");
+      // Key lookup format to ensure it matches the AI generated keys
+      const safeKey = zone.name.toLowerCase().replace(/ /g, "_");
       const aiScore = currentHourData[safeKey] || 0;
 
       // Use whichever is higher: real backend score (disruption) or AI prediction
@@ -189,8 +176,8 @@ export function LiveMap() {
                   key={zone.id}
                   onClick={() => setSelectedZone(isSelected ? null : zone)}
                   className={`text-left w-full rounded-2xl border p-3.5 transition-all shadow-sm ${isSelected
-                      ? "border-primary bg-primary/5 shadow-md"
-                      : "border-border bg-card hover:border-primary/30 hover:bg-muted/40"
+                    ? "border-primary bg-primary/5 shadow-md"
+                    : "border-border bg-card hover:border-primary/30 hover:bg-muted/40"
                     }`}
                 >
                   <div className="flex items-center justify-between mb-1">

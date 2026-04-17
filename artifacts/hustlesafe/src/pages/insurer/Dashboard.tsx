@@ -15,10 +15,21 @@ import { Activity, Zap, Ban, Clock } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { calculateDailyRisk, generateHourlyRiskVariance } from "@/lib/riskSimulation";
 
-
-// Constants removed
-
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+// ── Deterministic Weekly Total Volume ──────────────────────────────────────────
+function getWeeklyTotalPremiumVolume() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 1);
+  const days = Math.floor((now.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
+  const currentWeek = Math.ceil(days / 7);
+
+  // Fluctuates platform-wide total based on the same week cycle
+  const baseTotal = 810000;
+  const variance = (currentWeek % 8) * 15400; // Adds between ₹0 and ₹1,07,800 depending on the week
+
+  return baseTotal + variance;
+}
 
 function normalizeZoneStatus(status: string | undefined, gdsScore: number | undefined): "active" | "warning" | "disrupted" {
   const s = (status || "").toLowerCase();
@@ -28,7 +39,6 @@ function normalizeZoneStatus(status: string | undefined, gdsScore: number | unde
   if ((gdsScore ?? 0) >= 60) return "warning";
   return "active";
 }
-
 
 export function InsurerDashboard() {
   const queryClient = useQueryClient();
@@ -57,7 +67,6 @@ export function InsurerDashboard() {
     total_workers: 2847,
     total_paid_out: 470000, // ₹4.7L
     loss_ratio: 62.0,
-    monthly_premium: 810000, // ₹8.1L Gross Premium Volume
     zones_in_disruption: 0
   };
 
@@ -84,15 +93,15 @@ export function InsurerDashboard() {
         }
 
         const todayStr = "2026-04-16"; // Locked to demo data window
-        
-        let localHourlyModel: any[] = Array.from({length: 24}, (_, i) => ({ time: `${i.toString().padStart(2, '0')}:00` }));
+
+        let localHourlyModel: any[] = Array.from({ length: 24 }, (_, i) => ({ time: `${i.toString().padStart(2, '0')}:00` }));
         const localPeaks: Record<string, { score: number, time: string }> = {};
 
         const mappedZones = ["koramangala", "indiranagar", "whitefield", "electronic_city", "hsr_layout", "btm_layout", "marathahalli", "jayanagar"];
         mappedZones.forEach(z => {
           const dailyAvg = calculateDailyRisk(z, todayStr);
           const hourlyArray = generateHourlyRiskVariance(dailyAvg);
-          
+
           let peakScore = 0;
           let peakTime = "00:00";
 
@@ -122,8 +131,6 @@ export function InsurerDashboard() {
     const currentHour = simulatedHour !== null ? simulatedHour : new Date().getHours();
     let hourlyDataToProcess = aiHourlyData.length > 0 ? aiHourlyData : [];
     let currentHourData = hourlyDataToProcess[currentHour] || {};
-    
-    // Unnecessary loop removed
 
     const zonesToMap = (zonesData?.zones && zonesData.zones.length > 0)
       ? zonesData.zones
@@ -195,7 +202,6 @@ export function InsurerDashboard() {
     queryClient.invalidateQueries({ queryKey: ["/api/zones"] });
   };
 
-  // Helper to format currency for the KPI grid
   const formatLakhs = (val: number) => val >= 100000 ? `₹${(val / 100000).toFixed(1)}L` : `₹${val?.toLocaleString() || 0}`;
 
   return (
@@ -216,7 +222,8 @@ export function InsurerDashboard() {
           {(() => {
             const data = platformAnalytics || FALLBACK_ANALYTICS;
             const dynamicKpiCards = [
-              { label: "Est. Premium", value: formatLakhs(data.monthly_premium || FALLBACK_ANALYTICS.monthly_premium), sub: "Monthly Vol" },
+              // Replaced with our deterministic weekly volume!
+              { label: "Est. Premium", value: formatLakhs(getWeeklyTotalPremiumVolume()), sub: "Monthly Vol" },
               { label: "Active Workers", value: data.total_workers?.toLocaleString() || "0", sub: "Platform" },
               { label: "Zones Live", value: `${liveZones.length} / 8`, sub: "Monitored" },
               { label: "Active Disruptions", value: liveZones.filter((z) => z.status === 'disrupted').length.toString(), sub: "Zones" },

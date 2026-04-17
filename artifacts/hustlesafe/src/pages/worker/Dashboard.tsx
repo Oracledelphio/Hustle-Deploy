@@ -10,10 +10,21 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useWalletBalance } from "@/hooks/useWallet";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { calculateDailyRisk, generateHourlyRiskVariance, calculateRotationalPremium } from "@/lib/riskSimulation";
+import { calculateDailyRisk, generateHourlyRiskVariance } from "@/lib/riskSimulation";
 
-// Removed fallback constants in favor of backend-only data flow
+// ── Deterministic Weekly Individual Premium ──────────────────────────────────────────
+function getWeeklyDynamicPremium() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 1);
+  const days = Math.floor((now.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
+  const currentWeek = Math.ceil(days / 7);
 
+  // Fluctuates deterministically based on the week number
+  const basePremium = 24.00;
+  const weeklyVariance = (currentWeek % 8) * 1.15; // Adds between ₹0 and ₹8.05
+
+  return basePremium + weeklyVariance;
+}
 
 const getRiskIcon = (score: number) => {
   if (score >= 80) return <AlertTriangle className="w-6 h-6 text-destructive" />;
@@ -53,11 +64,6 @@ export function WorkerDashboard() {
 
   useEffect(() => {
     // 1. Define the Hardcoded Fallbacks
-    const FALLBACK_PREMIUM = {
-      current_premium: 25.00,
-      explanation: "[FALLBACK - API OFFLINE] Your premium is ₹25 this week based on standard seasonal risk models."
-    };
-
     const FALLBACK_STATS = {
       policy_tier: "Standard",
       coverage_cap: 1200,
@@ -74,10 +80,11 @@ export function WorkerDashboard() {
         const hourlyScores = generateHourlyRiskVariance(dailyRisk);
         setHourlyForecast(getRotatedForecast(hourlyScores));
 
-        const premiumSimulation = calculateRotationalPremium(targetZoneId);
+        // Inject the deterministic weekly premium!
+        const currentDynamicPremium = getWeeklyDynamicPremium();
         setPremiumData({
-          current_premium: premiumSimulation.premium,
-          explanation: `Your premium rotated to ₹${premiumSimulation.premium} for Week ${premiumSimulation.weekIndex + 1} based on ${targetZoneId} zone risk factors.`
+          current_premium: currentDynamicPremium,
+          explanation: `Your premium rotated to ₹${currentDynamicPremium.toFixed(2)} this week based on AI risk adjustments for your zone.`
         });
 
         const controller = new AbortController();
@@ -167,7 +174,7 @@ export function WorkerDashboard() {
     sendPing(); // Initial ping
     const interval = setInterval(sendPing, 60000); // Ping every 60s
     return () => clearInterval(interval);
-  }, [worker, zone]);
+  }, [worker, zone, isStationarySim]);
 
   return (
     <AppLayout>
